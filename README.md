@@ -13,7 +13,7 @@ This code is only used for learning Python.
   - `socket.inet_pton`, `socket.inet_ntop` to convert IP string and network bytes. If `socket` does not have the 2 functions (e.g. Before `Python 2.3`), the author implemented them.
 
   > Notice that `socket.inet_pton` can handle IPV4 and IPV6 addresses, yet `socket.inet_aton` cannot handle IPV6.
-  
+
   - `parse_header`, `pack_addr` network utility functions.
   - `IPNetwork` class which saves IP addresses with prefixes.
 3. `daemon.py`: Make Shadowsocks run as a daemon in *NIX.
@@ -26,3 +26,5 @@ This code is only used for learning Python.
 10. `shell.py`: Prompting and handling configs in shell.
 11. `tcprelay.py`: Connecting remote servers by TCP.
 12. `udprelay.py`: Connecting remote servers by UDP.
+
+The core modules are `asyncdns.py`, `eventloop.py`, `tcprelay.py`, `udprelay.py`. `local.py` and `server.py` are just wrapping them up.
