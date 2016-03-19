@@ -192,8 +192,7 @@ reply = "\x05\x00\x00\x01"#VER REP RSV ATYP
 reply += socket.inet_aton('0.0.0.0') + struct.pack(">H", 0)#binding 0.0.0.0
 self.wfile.write(reply)
 ```
-,
-reply to user's browser.
+Now our server replies to user's browser.
 Correspondingly, the server's response format is:
 
 | VER | REP | RSV  | ATYP | BND ADDR | BND PORT |
