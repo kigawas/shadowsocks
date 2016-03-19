@@ -8,6 +8,7 @@ This code is only used for learning Python.
 ## Project structure
 
 1. `asyncdns.py`: Handling DNS requests.
+
 2. `common.py`: Wrapping some functions to make them easier to use.
   - `ord`,`chr` to convert between `int` and `char` just like C. The default `ord` and `chr` functions in Python have been replaced.
   - `socket.inet_pton`, `socket.inet_ntop` to convert IP string and network bytes. If `socket` does not have the 2 functions (e.g. Before `Python 2.3`), the author implemented them.
@@ -16,23 +17,34 @@ This code is only used for learning Python.
 
   - `parse_header`, `pack_addr` network utility functions.
   - `IPNetwork` class which saves IP addresses with prefixes.
-3. `daemon.py`: Make Shadowsocks run as a daemon in *NIX.
+
+3. `daemon.py`: Make Shadowsocks run as a daemon in \*NIX.
+
 4. `encrypt.py`: Encrypt/Decrypt Shadowsocks's protocol to circumvent GFW
+
 5. `eventloop.py`: Use `select`,`epoll`, `kqueue` to multiplex I/O
+
 6. `local.py`: Client code using SOCKS to set up a proxy and transfer packets.
+
 7. `lru_cache.py`: LRU cache for DNS caching in `asyncdns.py`.
+
 8. `manager.py`: A config manager.
+
 9. `server.py`: Server code requesting remote sites and sending back responses to clients.
+
 10. `shell.py`: Prompting and handling configs in shell.
+
 11. `tcprelay.py`: Connecting remote servers by TCP.
+
 12. `udprelay.py`: Connecting remote servers by UDP.
 
 The core modules are `asyncdns.py`, `eventloop.py`, `tcprelay.py`, `udprelay.py`. `local.py` and `server.py` are just wrapping them up.
 
-
 ## Evolution of Shadowsocks
+
 At first, Shadowsocks only uses [*substitution cypher*](https://en.wikipedia.org/wiki/Substitution_cipher) to cypher the packets, which is thought to be very **unsafe**. In addition, in the early version of Shadowsocks, there are only 2 core modules: `local.py` and `server.py`. Due to its concision, we take [this](https://github.com/kigawas/shadowsocks-learning/tree/8c5c40915ea8fbd22a0f1a6a9596010565118b35) version as an example to explain the underground mechanism of Shadowsocks.
 
+### Local module in early version
 Firstly, we check the `local.py`.
 We can see the author build a table to make substitutions of ASCII characters.
 ```python
@@ -95,7 +107,7 @@ def send_encrypt(self, sock, data):
     sock.send(self.encrypt(data))
 ```
 
-The last function in class `Socks5Server` comes at last:laughing:! It is also the longest function and  seems to be a little frustrating:open_mouth:.
+The last function in class `Socks5Server` comes at last!:laughing: It is also the longest function and  seems to be a little frustrating.:open_mouth:
 ```python
 def handle(self):
     try:
@@ -156,6 +168,7 @@ They read data from client like:
 | VER | NMETHODS | METHODS |
 | --- | -------- | ------- |
 |  1  |     1    |  1-255  |
+
 - VER means SOCKS version, here should be 0x05
 - NMETHODS is the length of METHODS
 - METHODS is a list of verifications. 0x00 means no verifications.
@@ -165,6 +178,7 @@ After the server received the request, the code `self.wfile.write("\x05\x00")` r
 | VER | METHODS |
 | --- | ------- |
 |  1  |    1    |
+
 - VER should be 0x05
 - METHODS should be 0x00 without verifications.
 
@@ -173,6 +187,7 @@ After the handshaking stage, the client can send requests to our server. The req
 | VER | CMD | RSV  | ATYP | DST ADDR | DST PORT |
 |-----|-----|------|------|----------|----------|
 | 1   | 1   | 0x00 | 1    | Variable | 2        |
+
 - VER means SOCKS version, here should be 0x05
 - CMD means command
   - 0x01: CONNECT
@@ -181,10 +196,10 @@ After the handshaking stage, the client can send requests to our server. The req
 - RSV means reserved, now it is 0x00
 - ATYPE means address type
   - 0x01: IPV4 address, DST ADDR will be 4 bytes
-  - 0x03: domain name, the first byte in DST ADDR indicates the length, and the rest will be the domain name (without \0)
+  - 0x03: domain name, the first byte in DST ADDR indicates the length, and the rest will be the domain name (without \\0)
   - 0x04: IPV6 address, DST ADDR will be 16 bytes
 - DST ADDR means destination address
-- DST PORT means destination port  
+- DST PORT means destination port
 
 Then,
 ```python
@@ -198,6 +213,7 @@ Correspondingly, the server's response format is:
 | VER | REP | RSV  | ATYP | BND ADDR | BND PORT |
 |-----|-----|------|------|----------|----------|
 | 1   | 1   | 0x00 | 1    | Variable | 2        |
+
 - VER means SOCKS version, here should be 0x05
 - REP means reply
   - 0x00: succeeded
@@ -208,3 +224,68 @@ Correspondingly, the server's response format is:
   - 0x04: IPV6 address, DST ADDR will be 16 bytes
 - BND ADDR means bound address
 - BND PORT means bound port
+
+### Server module in early version
+
+Just like `local.py`, `server.py` also follows the same structure. The function `get_table` and class `ThreadingTCPServer` are nothing different. And `Socks5Server` is even simpler than its local version due to there is no need to handle SOCKS5 protocol. Check the comments!:laughing:
+```python
+class Socks5Server(SocketServer.StreamRequestHandler):
+    def handle_tcp(self, sock, remote):
+        try:
+            fdset = [sock, remote]
+            while True:
+                r, w, e = select.select(fdset, [], [])
+                if sock in r:#recv data from local
+                    data = sock.recv(4096)
+                    if len(data) <= 0:
+                        break
+                    if remote.sendall(self.decrypt(data)) is not None:
+                        #we need to decrypt them
+                        #and send them to destination server (e.g. google.com)
+                        break
+                if remote in r:#recv data from destination server
+                    data = remote.recv(4096)
+                    if len(data) <= 0:
+                        break
+                    if sock.sendall(self.encrypt(data)) is not None:
+                        #we need to encrypt them to circumvent the firewall
+                        #and send them back to local
+                        break
+        finally:
+            sock.close()
+            remote.close()
+
+    def encrypt(self, data):
+        return data.translate(encrypt_table)
+
+    def decrypt(self, data):
+        return data.translate(decrypt_table)
+
+    def handle(self):
+        try:
+            sock = self.connection
+            #as mentioned before, the address is like
+            #ATYP + dest IP + port or ATYP + length + domain name + port
+            addrtype = ord(self.decrypt(sock.recv(1)))
+            if addrtype == 1:#dest IP + port
+                addr = socket.inet_ntoa(self.decrypt(self.rfile.read(4)))
+            elif addrtype == 3:
+                addr = self.decrypt(#length + domain name + port
+                    self.rfile.read(ord(self.decrypt(sock.recv(1)))))
+            else:
+                # not support
+                logging.warn('addr_type not support')
+                return
+            port = struct.unpack('>H', self.decrypt(self.rfile.read(2)))
+            try:
+                logging.info('connecting %s:%d' % (addr, port[0]))
+                remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                remote.connect((addr, port[0]))
+            except socket.error, e:
+                # Connection refused
+                logging.warn(e)
+                return
+            self.handle_tcp(sock, remote)
+        except socket.error, e:
+            logging.warn(e)
+```
