@@ -40,7 +40,7 @@ def get_table(key):
     m = hashlib.md5()
     m.update(key)
     s = m.digest()
-    (a, b) = struct.unpack('<QQ', s)
+    (a, b) = struct.unpack('<QQ', s)#here we can get 2 unsigned long long integers
     table = [c for c in string.maketrans('', '')]
     for i in xrange(1, 1024):
         table.sort(lambda x, y: int(a % (ord(x) + i) - a % (ord(y) + i)))
@@ -52,3 +52,160 @@ Then comes a TCP Server with multi-threading. You can find a usage at [here](htt
 class ThreadingTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     pass
 ```
+
+Now we can see the core class of `local.py`, it implemented a SOCKS5 server and transfer packets following SOCKS5 protocol. Let's take a glance at it.
+```python
+class Socks5Server(SocketServer.StreamRequestHandler):
+    def handle_tcp(self, sock, remote):
+        try:
+            fdset = [sock, remote]
+            while True:
+                r, w, e = select.select(fdset, [], [])
+                if sock in r:
+                    data = sock.recv(4096) #recv data from browser
+                    if len(data) <= 0:#add len to fix bug
+                        break
+                    if remote.sendall(self.encrypt(data)) is not None:
+                        #encrypt and send them all
+                        #to remote SS server
+                        break
+                if remote in r:
+                    data = remote.recv(4096) #recv data from remote SS server
+                    if len(data) <= 0:#add len to fix bug
+                        break
+                    if sock.sendall(self.decrypt(data)) is not None:
+                        #decrypt and send them all
+                        #to browser
+                        break
+        finally:
+            sock.close()
+            remote.close()
+```
+In this function, the author uses `select` to support I/O multiplexing. `select.select`'s [signature](https://docs.python.org/2/library/select.html#select.select) is `select.select(rlist, wlist, xlist[, timeout])`, here our server just need to use `rlist` to wait until ready for reading `sock` and `remote`. The `sock` connects user's web browser as a proxy and the `remote` connects a shadowsocks server which is located beyond the firewall.
+
+Then comes functions related to ciphering and deciphering. The author uses [`string.translate`](https://docs.python.org/2/library/string.html#string.translate) to encrypt and decrypt data. Notice that it is very **unsafe** to do so. You can find more information about cryptography on [Wikipedia](https://en.wikipedia.org/wiki/Cryptography#Modern_cryptography).
+```python
+def encrypt(self, data):
+    return data.translate(encrypt_table)
+
+def decrypt(self, data):
+    return data.translate(decrypt_table)
+
+def send_encrypt(self, sock, data):
+    sock.send(self.encrypt(data))
+```
+
+The last function in class `Socks5Server` comes at last:laughing:! It is also the longest function and  seems to be a little frustrating:open_mouth:.
+```python
+def handle(self):
+    try:
+        data = self.rfile.read(2)
+        self.rfile.read(ord(data[1]))
+        self.wfile.write("\x05\x00")
+        data = self.rfile.read(4)
+        mode = ord(data[1])
+        if mode != 1:
+            logging.warn('mode != 1')
+            return
+        addrtype = ord(data[3])
+        addr_to_send = data[3]
+        if addrtype == 1:#IPV4 address
+            addr_ip = self.rfile.read(4)#read IP
+            addr = socket.inet_ntoa(addr_ip)#convert it to a string like "192.168.0.1"
+            addr_to_send += addr_ip
+        elif addrtype == 3:#domain name
+            addr_len = self.rfile.read(1)#read length
+            addr = self.rfile.read(ord(addr_len))#read domain name
+            addr_to_send += addr_len + addr
+        else:
+            logging.warn('addr_type not support')
+            # not support
+            return
+        addr_port = self.rfile.read(2)#read port
+        addr_to_send += addr_port#ATYP + dest IP + port or ATYP + length + domain name + port
+        port = struct.unpack('>H', addr_port)#convert unsigned short bytes to (port,) in Python
+        try:
+            reply = "\x05\x00\x00\x01"#VER REP RSV ATYP
+            reply += socket.inet_aton('0.0.0.0') + struct.pack(">H", 0)#binding 0.0.0.0
+            self.wfile.write(reply)
+            # reply immediately
+            if '-6' in sys.argv[1:]:
+                remote = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+            else:
+                remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            remote.connect((SERVER, REMOTE_PORT))
+            self.send_encrypt(remote, addr_to_send)
+            logging.info('connecting %s:%d' % (addr, port[0]))
+        except socket.error, e:
+            logging.warn(e)
+            return
+        self.handle_tcp(self.connection, remote)
+    except socket.error, e:
+        logging.warn(e)
+```
+Because `Socks5Server` inherits [`SocketServer.StreamRequestHandler`](https://docs.python.org/2/library/socketserver.html#SocketServer.StreamRequestHandler), the function `handle` must be overridden to handle requests from clients which are thought to be users' browsers.
+At the first two lines, our SOCKS5 server receive a connecting request from a client. You can find the protocol at [RFC1928](https://www.ietf.org/rfc/rfc1928.txt).
+
+At the first two lines:
+```python
+data = self.rfile.read(2)
+self.rfile.read(ord(data[1]))
+```
+They read data from client like:
+
+| VER | NMETHODS | METHODS |
+| --- | -------- | ------- |
+|  1  |     1    |  1-255  |
+- VER means SOCKS version, here should be 0x05
+- NMETHODS is the length of METHODS
+- METHODS is a list of verifications. 0x00 means no verifications.
+
+After the server received the request, the code `self.wfile.write("\x05\x00")` responds like:
+
+| VER | METHODS |
+| --- | ------- |
+|  1  |    1    |
+- VER should be 0x05
+- METHODS should be 0x00 without verifications.
+
+After the handshaking stage, the client can send requests to our server. The request format is:
+
+| VER | CMD | RSV  | ATYP | DST ADDR | DST PORT |
+|-----|-----|------|------|----------|----------|
+| 1   | 1   | 0x00 | 1    | Variable | 2        |
+- VER means SOCKS version, here should be 0x05
+- CMD means command
+  - 0x01: CONNECT
+  - 0x02: BIND
+  - 0x03: UDP forwarding
+- RSV means reserved, now it is 0x00
+- ATYPE means address type
+  - 0x01: IPV4 address, DST ADDR will be 4 bytes
+  - 0x03: domain name, the first byte in DST ADDR indicates the length, and the rest will be the domain name (without \0)
+  - 0x04: IPV6 address, DST ADDR will be 16 bytes
+- DST ADDR means destination address
+- DST PORT means destination port  
+
+Then,
+```python
+reply = "\x05\x00\x00\x01"#VER REP RSV ATYP
+reply += socket.inet_aton('0.0.0.0') + struct.pack(">H", 0)#binding 0.0.0.0
+self.wfile.write(reply)
+```
+,
+reply to user's browser.
+Correspondingly, the server's response format is:
+
+| VER | REP | RSV  | ATYP | BND ADDR | BND PORT |
+|-----|-----|------|------|----------|----------|
+| 1   | 1   | 0x00 | 1    | Variable | 2        |
+- VER means SOCKS version, here should be 0x05
+- REP means reply
+  - 0x00: succeeded
+- RSV means reserved, now it is 0x00
+- ATYPE means address type
+  - 0x01: IPV4 address, DST ADDR will be 4 bytes
+  - 0x03: domain name, the first byte in DST ADDR indicates the length, and the rest will be the domain name (without \0)
+  - 0x04: IPV6 address, DST ADDR will be 16 bytes
+- BND ADDR means bound address
+- BND PORT means bound port
