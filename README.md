@@ -20,7 +20,7 @@ This repository should only be used for learning Python.
 
 3. `daemon.py`: Make Shadowsocks run as a daemon in \*NIX.
 
-4. `encrypt.py`: Encrypt/Decrypt Shadowsocks's protocol to circumvent GFW
+4. `encrypt.py`: Encrypt/Decrypt Shadowsocks's protocol to circumvent the firewall.
 
 5. `eventloop.py`: Use `select`,`epoll`, `kqueue` to multiplex I/O
 
@@ -38,7 +38,7 @@ This repository should only be used for learning Python.
 
 12. `udprelay.py`: Connecting remote servers by UDP.
 
-The core modules are `asyncdns.py`, `eventloop.py`, `tcprelay.py`, `udprelay.py`. `local.py` and `server.py` are just wrapping them up.
+The core modules are `asyncdns.py`, `eventloop.py`, `tcprelay.py`, and `udprelay.py`. `local.py` and `server.py` are just wrapping them up.
 
 ## Evolution of Shadowsocks
 
@@ -227,7 +227,7 @@ Correspondingly, the server's response format is:
 
 ### Server module in early version
 
-Just like `local.py`, `server.py` also follows the same structure. The function `get_table` and class `ThreadingTCPServer` are nothing different. And `Socks5Server` is even simpler than its local version due to there is no need to handle SOCKS5 protocol. Check the comments!:laughing:
+Just like `local.py`, `server.py` also follows the same structure. The function `get_table` and class `ThreadingTCPServer` are nothing different. And `Socks5Server` is even simpler than its local version due to there is no need to handle SOCKS5 protocol. Check out the comments!:laughing:
 ```python
 class Socks5Server(SocketServer.StreamRequestHandler):
     def handle_tcp(self, sock, remote):
