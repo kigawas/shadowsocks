@@ -11,7 +11,7 @@ This repository should only be used for learning Python.
 
 2. `common.py`: Wrapping some functions to make them easier to use.
   - `ord`, `chr` to convert between `int` and `char` just like C. The default `ord` and `chr` functions in Python have been replaced.
-  - `socket.inet_pton`, `socket.inet_ntop` to convert IP string and network bytes. If `socket` does not have the two functions (e.g. Before `Python 2.3`), the author implemented them.
+  - `socket.inet_pton`, `socket.inet_ntop` to convert IP string and network bytes. If `socket` does not have the two functions (e.g. Before Python 2.3), the author implemented them.
 
   > Notice that `socket.inet_pton` can handle IPV4 and IPV6 addresses, yet `socket.inet_aton` cannot handle IPV6.
 
