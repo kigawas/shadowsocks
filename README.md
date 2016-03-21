@@ -3,7 +3,7 @@ shadowsocks-learning
 
 Shadowsocks with comments which are helpful to understand its structure.
 
-This repository should only be used for learning Python.
+This repository should **only** be used for learning Python.
 
 ## Project structure
 
