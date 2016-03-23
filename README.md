@@ -289,3 +289,4 @@ class Socks5Server(SocketServer.StreamRequestHandler):
         except socket.error, e:
             logging.warn(e)
 ```
+Server side's `sock` and `remote` are diffenrent from client's `sock` and `remote`. Actually, `remote` in `local.py` is connecting `sock` in `server.py`. Due to Shadowsocks elaborate design, the same class functions elegantly in different side.
