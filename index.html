@@ -86,20 +86,19 @@
 <h3>
 <a id="local-module-in-early-version" class="anchor" href="#local-module-in-early-version" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Local module in early version</h3>
 
-<p>Firstly, we check the <code>local.py</code>.
-We can see the author build a table to make substitutions of ASCII characters.</p>
+<p>Firstly, we check the <code>local.py</code>. We can see the author build a table to make substitutions of ASCII characters.</p>
 
 <div class="highlight highlight-source-python"><pre><span class="pl-k">def</span> <span class="pl-en">get_table</span>(<span class="pl-smi">key</span>):
     m <span class="pl-k">=</span> hashlib.md5()
     m.update(key)
     s <span class="pl-k">=</span> m.digest()
-    (a, b) <span class="pl-k">=</span> struct.unpack(<span class="pl-s"><span class="pl-pds">'</span>&lt;QQ<span class="pl-pds">'</span></span>, s)<span class="pl-c">#here we can get 2 unsigned long long integers</span>
+    (a, b) <span class="pl-k">=</span> struct.unpack(<span class="pl-s"><span class="pl-pds">'</span>&lt;QQ<span class="pl-pds">'</span></span>, s)  <span class="pl-c"># here we can get 2 unsigned long long integers</span>
     table <span class="pl-k">=</span> [c <span class="pl-k">for</span> c <span class="pl-k">in</span> string.maketrans(<span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span>)]
     <span class="pl-k">for</span> i <span class="pl-k">in</span> <span class="pl-v">xrange</span>(<span class="pl-c1">1</span>, <span class="pl-c1">1024</span>):
         table.sort(<span class="pl-k">lambda</span> <span class="pl-smi">x</span>, <span class="pl-smi">y</span>: <span class="pl-c1">int</span>(a <span class="pl-k">%</span> (<span class="pl-c1">ord</span>(x) <span class="pl-k">+</span> i) <span class="pl-k">-</span> a <span class="pl-k">%</span> (<span class="pl-c1">ord</span>(y) <span class="pl-k">+</span> i)))
     <span class="pl-k">return</span> table</pre></div>
 
-<p>Then comes a TCP Server with multi-threading. You can find a usage at <a href="https://docs.python.org/2/library/socketserver.html#asynchronous-mixins">here</a>.</p>
+<p>Then comes a TCP Server with multi-threading. You can find a usage at <a href="https://docs.python.org/2/library/socketserver.html#asynchronous-mixins">the official doc</a>.</p>
 
 <div class="highlight highlight-source-python"><pre><span class="pl-k">class</span> <span class="pl-en">ThreadingTCPServer</span>(<span class="pl-e">SocketServer</span>.<span class="pl-e">ThreadingMixIn</span>, <span class="pl-e">SocketServer</span>.<span class="pl-e">TCPServer</span>):
     <span class="pl-k">pass</span></pre></div>
@@ -113,20 +112,19 @@ We can see the author build a table to make substitutions of ASCII characters.</
             <span class="pl-k">while</span> <span class="pl-c1">True</span>:
                 r, w, e <span class="pl-k">=</span> select.select(fdset, [], [])
                 <span class="pl-k">if</span> sock <span class="pl-k">in</span> r:
-                    data <span class="pl-k">=</span> sock.recv(<span class="pl-c1">4096</span>) <span class="pl-c">#recv data from browser</span>
-                    <span class="pl-k">if</span> <span class="pl-c1">len</span>(data) <span class="pl-k">&lt;=</span> <span class="pl-c1">0</span>:<span class="pl-c">#add len to fix bug</span>
+                    data <span class="pl-k">=</span> sock.recv(<span class="pl-c1">4096</span>)  <span class="pl-c"># recv data from browser</span>
+                    <span class="pl-k">if</span> <span class="pl-c1">len</span>(data) <span class="pl-k">&lt;=</span> <span class="pl-c1">0</span>:  <span class="pl-c"># add len to fix bug</span>
                         <span class="pl-k">break</span>
                     <span class="pl-k">if</span> remote.sendall(<span class="pl-v">self</span>.encrypt(data)) <span class="pl-k">is</span> <span class="pl-k">not</span> <span class="pl-c1">None</span>:
-                        <span class="pl-c">#encrypt and send them all</span>
-                        <span class="pl-c">#to remote SS server</span>
+                        <span class="pl-c"># encrypt and send them all</span>
+                        <span class="pl-c"># to remote SS server</span>
                         <span class="pl-k">break</span>
                 <span class="pl-k">if</span> remote <span class="pl-k">in</span> r:
-                    data <span class="pl-k">=</span> remote.recv(<span class="pl-c1">4096</span>) <span class="pl-c">#recv data from remote SS server</span>
-                    <span class="pl-k">if</span> <span class="pl-c1">len</span>(data) <span class="pl-k">&lt;=</span> <span class="pl-c1">0</span>:<span class="pl-c">#add len to fix bug</span>
+                    data <span class="pl-k">=</span> remote.recv(<span class="pl-c1">4096</span>)  <span class="pl-c"># recv data from remote SS server</span>
+                    <span class="pl-k">if</span> <span class="pl-c1">len</span>(data) <span class="pl-k">&lt;=</span> <span class="pl-c1">0</span>:  <span class="pl-c"># add len to fix bug</span>
                         <span class="pl-k">break</span>
                     <span class="pl-k">if</span> sock.sendall(<span class="pl-v">self</span>.decrypt(data)) <span class="pl-k">is</span> <span class="pl-k">not</span> <span class="pl-c1">None</span>:
-                        <span class="pl-c">#decrypt and send them all</span>
-                        <span class="pl-c">#to browser</span>
+                        <span class="pl-c"># decrypt and send them all to browser</span>
                         <span class="pl-k">break</span>
         <span class="pl-k">finally</span>:
             sock.close()
@@ -145,7 +143,7 @@ We can see the author build a table to make substitutions of ASCII characters.</
 <span class="pl-k">def</span> <span class="pl-en">send_encrypt</span>(<span class="pl-smi"><span class="pl-smi">self</span></span>, <span class="pl-smi">sock</span>, <span class="pl-smi">data</span>):
     sock.send(<span class="pl-v">self</span>.encrypt(data))</pre></div>
 
-<p>The last function in class <code>Socks5Server</code> comes at last!<g-emoji alias="laughing" fallback-src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f606.png" ios-version="6.0">😆</g-emoji> It is also the longest function and  seems to be a little frustrating.<g-emoji alias="open_mouth" fallback-src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f62e.png" ios-version="6.0">😮</g-emoji></p>
+<p>The last function in class <code>Socks5Server</code> comes at last!<g-emoji alias="laughing" fallback-src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f606.png" ios-version="6.0">😆</g-emoji> It is also the longest function and seems to be a little frustrating.<g-emoji alias="open_mouth" fallback-src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f62e.png" ios-version="6.0">😮</g-emoji></p>
 
 <div class="highlight highlight-source-python"><pre><span class="pl-k">def</span> <span class="pl-en">handle</span>(<span class="pl-smi"><span class="pl-smi">self</span></span>):
     <span class="pl-k">try</span>:
@@ -159,24 +157,26 @@ We can see the author build a table to make substitutions of ASCII characters.</
             <span class="pl-k">return</span>
         addrtype <span class="pl-k">=</span> <span class="pl-c1">ord</span>(data[<span class="pl-c1">3</span>])
         addr_to_send <span class="pl-k">=</span> data[<span class="pl-c1">3</span>]
-        <span class="pl-k">if</span> addrtype <span class="pl-k">==</span> <span class="pl-c1">1</span>:<span class="pl-c">#IPV4 address</span>
-            addr_ip <span class="pl-k">=</span> <span class="pl-v">self</span>.rfile.read(<span class="pl-c1">4</span>)<span class="pl-c">#read IP</span>
-            addr <span class="pl-k">=</span> socket.inet_ntoa(addr_ip)<span class="pl-c">#convert it to a string like "192.168.0.1"</span>
+        <span class="pl-k">if</span> addrtype <span class="pl-k">==</span> <span class="pl-c1">1</span>:  <span class="pl-c"># IPV4 address</span>
+            addr_ip <span class="pl-k">=</span> <span class="pl-v">self</span>.rfile.read(<span class="pl-c1">4</span>)  <span class="pl-c"># read IP</span>
+            addr <span class="pl-k">=</span> socket.inet_ntoa(addr_ip)  <span class="pl-c"># convert it to a string like "192.168.0.1"</span>
             addr_to_send <span class="pl-k">+=</span> addr_ip
-        <span class="pl-k">elif</span> addrtype <span class="pl-k">==</span> <span class="pl-c1">3</span>:<span class="pl-c">#domain name</span>
-            addr_len <span class="pl-k">=</span> <span class="pl-v">self</span>.rfile.read(<span class="pl-c1">1</span>)<span class="pl-c">#read length</span>
-            addr <span class="pl-k">=</span> <span class="pl-v">self</span>.rfile.read(<span class="pl-c1">ord</span>(addr_len))<span class="pl-c">#read domain name</span>
+        <span class="pl-k">elif</span> addrtype <span class="pl-k">==</span> <span class="pl-c1">3</span>:  <span class="pl-c"># domain name</span>
+            addr_len <span class="pl-k">=</span> <span class="pl-v">self</span>.rfile.read(<span class="pl-c1">1</span>)  <span class="pl-c"># read length</span>
+            addr <span class="pl-k">=</span> <span class="pl-v">self</span>.rfile.read(<span class="pl-c1">ord</span>(addr_len))  <span class="pl-c"># read domain name</span>
             addr_to_send <span class="pl-k">+=</span> addr_len <span class="pl-k">+</span> addr
         <span class="pl-k">else</span>:
             logging.warn(<span class="pl-s"><span class="pl-pds">'</span>addr_type not support<span class="pl-pds">'</span></span>)
             <span class="pl-c"># not support</span>
             <span class="pl-k">return</span>
-        addr_port <span class="pl-k">=</span> <span class="pl-v">self</span>.rfile.read(<span class="pl-c1">2</span>)<span class="pl-c">#read port</span>
-        addr_to_send <span class="pl-k">+=</span> addr_port<span class="pl-c">#ATYP + dest IP + port or ATYP + length + domain name + port</span>
-        port <span class="pl-k">=</span> struct.unpack(<span class="pl-s"><span class="pl-pds">'</span>&gt;H<span class="pl-pds">'</span></span>, addr_port)<span class="pl-c">#convert unsigned short bytes to (port,) in Python</span>
+        addr_port <span class="pl-k">=</span> <span class="pl-v">self</span>.rfile.read(<span class="pl-c1">2</span>)  <span class="pl-c"># read port</span>
+        addr_to_send <span class="pl-k">+=</span> addr_port
+        <span class="pl-c"># now, addr_to_send  == ATYP + dest IP + port or ATYP + length + domain name + port</span>
+        <span class="pl-c"># if you visit google.com, domain name will be google.com and port will be 443</span>
+        port <span class="pl-k">=</span> struct.unpack(<span class="pl-s"><span class="pl-pds">'</span>&gt;H<span class="pl-pds">'</span></span>, addr_port)  <span class="pl-c">#  convert unsigned short bytes to (port,) in Python</span>
         <span class="pl-k">try</span>:
-            reply <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\x05\x00\x00\x01</span><span class="pl-pds">"</span></span><span class="pl-c">#VER REP RSV ATYP</span>
-            reply <span class="pl-k">+=</span> socket.inet_aton(<span class="pl-s"><span class="pl-pds">'</span>0.0.0.0<span class="pl-pds">'</span></span>) <span class="pl-k">+</span> struct.pack(<span class="pl-s"><span class="pl-pds">"</span>&gt;H<span class="pl-pds">"</span></span>, <span class="pl-c1">0</span>)<span class="pl-c">#binding 0.0.0.0</span>
+            reply <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\x05\x00\x00\x01</span><span class="pl-pds">"</span></span>  <span class="pl-c"># VER REP RSV ATYP</span>
+            reply <span class="pl-k">+=</span> socket.inet_aton(<span class="pl-s"><span class="pl-pds">'</span>0.0.0.0<span class="pl-pds">'</span></span>) <span class="pl-k">+</span> struct.pack(<span class="pl-s"><span class="pl-pds">"</span>&gt;H<span class="pl-pds">"</span></span>, <span class="pl-c1">0</span>)  <span class="pl-c"># binding 0.0.0.0</span>
             <span class="pl-v">self</span>.wfile.write(reply)
             <span class="pl-c"># reply immediately</span>
             <span class="pl-k">if</span> <span class="pl-s"><span class="pl-pds">'</span>-6<span class="pl-pds">'</span></span> <span class="pl-k">in</span> sys.argv[<span class="pl-c1">1</span>:]:
@@ -193,8 +193,7 @@ We can see the author build a table to make substitutions of ASCII characters.</
     <span class="pl-k">except</span> socket.error, e:
         logging.warn(e)</pre></div>
 
-<p>Because <code>Socks5Server</code> inherits <a href="https://docs.python.org/2/library/socketserver.html#SocketServer.StreamRequestHandler"><code>SocketServer.StreamRequestHandler</code></a>, the function <code>handle</code> must be overridden to handle requests from clients which are thought to be users' browsers.
-At the first two lines, our SOCKS5 server receive a connecting request from a client. You can find the protocol at <a href="https://www.ietf.org/rfc/rfc1928.txt">RFC1928</a>.</p>
+<p>Because <code>Socks5Server</code> inherits <a href="https://docs.python.org/2/library/socketserver.html#SocketServer.StreamRequestHandler"><code>SocketServer.StreamRequestHandler</code></a>, the function <code>handle</code> must be overridden to handle requests from clients which are thought to be users' browsers. At the first two lines, our SOCKS5 server receive a connecting request from a client. You can find the protocol at <a href="https://www.ietf.org/rfc/rfc1928.txt">RFC1928</a>.</p>
 
 <p>At the first two lines:</p>
 
@@ -275,7 +274,8 @@ At the first two lines, our SOCKS5 server receive a connecting request from a cl
 
 <ul>
 <li>VER means SOCKS version, here should be 0x05</li>
-<li>CMD means command
+<li>
+<p>CMD means command</p>
 
 <ul>
 <li>0x01: CONNECT</li>
@@ -283,8 +283,9 @@ At the first two lines, our SOCKS5 server receive a connecting request from a cl
 <li>0x03: UDP forwarding</li>
 </ul>
 </li>
-<li>RSV means reserved, now it is 0x00</li>
-<li>ATYPE means address type
+<li><p>RSV means reserved, now it is 0x00</p></li>
+<li>
+<p>ATYPE means address type</p>
 
 <ul>
 <li>0x01: IPV4 address, DST ADDR will be 4 bytes</li>
@@ -292,18 +293,17 @@ At the first two lines, our SOCKS5 server receive a connecting request from a cl
 <li>0x04: IPV6 address, DST ADDR will be 16 bytes</li>
 </ul>
 </li>
-<li>DST ADDR means destination address</li>
+<li><p>DST ADDR means destination address</p></li>
 <li>DST PORT means destination port</li>
 </ul>
 
 <p>Then,</p>
 
-<div class="highlight highlight-source-python"><pre>reply <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\x05\x00\x00\x01</span><span class="pl-pds">"</span></span><span class="pl-c">#VER REP RSV ATYP</span>
-reply <span class="pl-k">+=</span> socket.inet_aton(<span class="pl-s"><span class="pl-pds">'</span>0.0.0.0<span class="pl-pds">'</span></span>) <span class="pl-k">+</span> struct.pack(<span class="pl-s"><span class="pl-pds">"</span>&gt;H<span class="pl-pds">"</span></span>, <span class="pl-c1">0</span>)<span class="pl-c">#binding 0.0.0.0</span>
+<div class="highlight highlight-source-python"><pre>reply <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\x05\x00\x00\x01</span><span class="pl-pds">"</span></span>  <span class="pl-c"># VER REP RSV ATYP</span>
+reply <span class="pl-k">+=</span> socket.inet_aton(<span class="pl-s"><span class="pl-pds">'</span>0.0.0.0<span class="pl-pds">'</span></span>) <span class="pl-k">+</span> struct.pack(<span class="pl-s"><span class="pl-pds">"</span>&gt;H<span class="pl-pds">"</span></span>, <span class="pl-c1">0</span>)  <span class="pl-c"># binding 0.0.0.0:0, in my personal opinion, this is meaningless since you connected server, you've already known its IP and port.</span>
 <span class="pl-v">self</span>.wfile.write(reply)</pre></div>
 
-<p>Now our server replies to user's browser.
-Correspondingly, the server's response format is:</p>
+<p>Now our server replies to user's browser. Correspondingly, the server's response format is:</p>
 
 <table>
 <thead>
@@ -330,14 +330,16 @@ Correspondingly, the server's response format is:</p>
 
 <ul>
 <li>VER means SOCKS version, here should be 0x05</li>
-<li>REP means reply
+<li>
+<p>REP means reply</p>
 
 <ul>
 <li>0x00: succeeded</li>
 </ul>
 </li>
-<li>RSV means reserved, now it is 0x00</li>
-<li>ATYPE means address type
+<li><p>RSV means reserved, now it is 0x00</p></li>
+<li>
+<p>ATYPE means address type</p>
 
 <ul>
 <li>0x01: IPV4 address, DST ADDR will be 4 bytes</li>
@@ -345,14 +347,14 @@ Correspondingly, the server's response format is:</p>
 <li>0x04: IPV6 address, DST ADDR will be 16 bytes</li>
 </ul>
 </li>
-<li>BND ADDR means bound address</li>
+<li><p>BND ADDR means bound address</p></li>
 <li>BND PORT means bound port</li>
 </ul>
 
 <h3>
 <a id="server-module-in-early-version" class="anchor" href="#server-module-in-early-version" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Server module in early version</h3>
 
-<p>Just like <code>local.py</code>, <code>server.py</code> also follows the same structure. The function <code>get_table</code> and class <code>ThreadingTCPServer</code> are nothing different. And <code>Socks5Server</code> is even simpler than its local version due to there is no need to handle SOCKS5 protocol. Check out the comments!<g-emoji alias="laughing" fallback-src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f606.png" ios-version="6.0">😆</g-emoji></p>
+<p>Just like <code>local.py</code>, <code>server.py</code> also follows the same structure. The function <code>get_table</code> and class <code>ThreadingTCPServer</code> are nothing different. And <code>Socks5Server</code> is even simpler than its local version due to there is no need to handle SOCKS5 protocol. Let's check out the codes!<g-emoji alias="laughing" fallback-src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f606.png" ios-version="6.0">😆</g-emoji></p>
 
 <div class="highlight highlight-source-python"><pre><span class="pl-k">class</span> <span class="pl-en">Socks5Server</span>(<span class="pl-e">SocketServer</span>.<span class="pl-e">StreamRequestHandler</span>):
     <span class="pl-k">def</span> <span class="pl-en">handle_tcp</span>(<span class="pl-smi"><span class="pl-smi">self</span></span>, <span class="pl-smi">sock</span>, <span class="pl-smi">remote</span>):
@@ -360,21 +362,19 @@ Correspondingly, the server's response format is:</p>
             fdset <span class="pl-k">=</span> [sock, remote]
             <span class="pl-k">while</span> <span class="pl-c1">True</span>:
                 r, w, e <span class="pl-k">=</span> select.select(fdset, [], [])
-                <span class="pl-k">if</span> sock <span class="pl-k">in</span> r:<span class="pl-c">#recv data from local</span>
+                <span class="pl-k">if</span> sock <span class="pl-k">in</span> r:  <span class="pl-c"># recv data from local</span>
                     data <span class="pl-k">=</span> sock.recv(<span class="pl-c1">4096</span>)
                     <span class="pl-k">if</span> <span class="pl-c1">len</span>(data) <span class="pl-k">&lt;=</span> <span class="pl-c1">0</span>:
                         <span class="pl-k">break</span>
                     <span class="pl-k">if</span> remote.sendall(<span class="pl-v">self</span>.decrypt(data)) <span class="pl-k">is</span> <span class="pl-k">not</span> <span class="pl-c1">None</span>:
-                        <span class="pl-c">#we need to decrypt them</span>
-                        <span class="pl-c">#and send them to destination server (e.g. google.com)</span>
+                        <span class="pl-c"># we need to decrypt them and send them to destination server (e.g. google.com)</span>
                         <span class="pl-k">break</span>
-                <span class="pl-k">if</span> remote <span class="pl-k">in</span> r:<span class="pl-c">#recv data from destination server</span>
+                <span class="pl-k">if</span> remote <span class="pl-k">in</span> r:  <span class="pl-c"># recv data from destination server</span>
                     data <span class="pl-k">=</span> remote.recv(<span class="pl-c1">4096</span>)
                     <span class="pl-k">if</span> <span class="pl-c1">len</span>(data) <span class="pl-k">&lt;=</span> <span class="pl-c1">0</span>:
                         <span class="pl-k">break</span>
                     <span class="pl-k">if</span> sock.sendall(<span class="pl-v">self</span>.encrypt(data)) <span class="pl-k">is</span> <span class="pl-k">not</span> <span class="pl-c1">None</span>:
-                        <span class="pl-c">#we need to encrypt them to circumvent the firewall</span>
-                        <span class="pl-c">#and send them back to local</span>
+                        <span class="pl-c"># we need to encrypt them to circumvent the firewall and send them back to local</span>
                         <span class="pl-k">break</span>
         <span class="pl-k">finally</span>:
             sock.close()
@@ -389,14 +389,13 @@ Correspondingly, the server's response format is:</p>
     <span class="pl-k">def</span> <span class="pl-en">handle</span>(<span class="pl-smi"><span class="pl-smi">self</span></span>):
         <span class="pl-k">try</span>:
             sock <span class="pl-k">=</span> <span class="pl-v">self</span>.connection
-            <span class="pl-c">#as mentioned before, the address is like</span>
-            <span class="pl-c">#ATYP + dest IP + port or ATYP + length + domain name + port</span>
+            <span class="pl-c"># as mentioned before, the address is like</span>
+            <span class="pl-c"># ATYP + dest IP + port or ATYP + length + domain name + port</span>
             addrtype <span class="pl-k">=</span> <span class="pl-c1">ord</span>(<span class="pl-v">self</span>.decrypt(sock.recv(<span class="pl-c1">1</span>)))
-            <span class="pl-k">if</span> addrtype <span class="pl-k">==</span> <span class="pl-c1">1</span>:<span class="pl-c">#dest IP + port</span>
+            <span class="pl-k">if</span> addrtype <span class="pl-k">==</span> <span class="pl-c1">1</span>:  <span class="pl-c"># dest IP + port</span>
                 addr <span class="pl-k">=</span> socket.inet_ntoa(<span class="pl-v">self</span>.decrypt(<span class="pl-v">self</span>.rfile.read(<span class="pl-c1">4</span>)))
-            <span class="pl-k">elif</span> addrtype <span class="pl-k">==</span> <span class="pl-c1">3</span>:<span class="pl-c">#length + domain name + port</span>
-                addr <span class="pl-k">=</span> <span class="pl-v">self</span>.decrypt(
-                    <span class="pl-v">self</span>.rfile.read(<span class="pl-c1">ord</span>(<span class="pl-v">self</span>.decrypt(sock.recv(<span class="pl-c1">1</span>)))))
+            <span class="pl-k">elif</span> addrtype <span class="pl-k">==</span> <span class="pl-c1">3</span>:  <span class="pl-c"># length + domain name + port</span>
+                addr <span class="pl-k">=</span> <span class="pl-v">self</span>.decrypt(<span class="pl-v">self</span>.rfile.read(<span class="pl-c1">ord</span>(<span class="pl-v">self</span>.decrypt(sock.recv(<span class="pl-c1">1</span>)))))
             <span class="pl-k">else</span>:
                 <span class="pl-c"># not support</span>
                 logging.warn(<span class="pl-s"><span class="pl-pds">'</span>addr_type not support<span class="pl-pds">'</span></span>)
@@ -406,6 +405,8 @@ Correspondingly, the server's response format is:</p>
                 logging.info(<span class="pl-s"><span class="pl-pds">'</span>connecting <span class="pl-c1">%s</span>:<span class="pl-c1">%d</span><span class="pl-pds">'</span></span> <span class="pl-k">%</span> (addr, port[<span class="pl-c1">0</span>]))
                 remote <span class="pl-k">=</span> socket.socket(socket.<span class="pl-c1">AF_INET</span>, socket.<span class="pl-c1">SOCK_STREAM</span>)
                 remote.connect((addr, port[<span class="pl-c1">0</span>]))
+                <span class="pl-c"># assuming client wants to visit google.com:</span>
+                <span class="pl-c"># addr == google.com and port[0] == 443</span>
             <span class="pl-k">except</span> socket.error, e:
                 <span class="pl-c"># Connection refused</span>
                 logging.warn(e)
@@ -413,6 +414,22 @@ Correspondingly, the server's response format is:</p>
             <span class="pl-v">self</span>.handle_tcp(sock, remote)
         <span class="pl-k">except</span> socket.error, e:
             logging.warn(e)</pre></div>
+
+<p>Server side's <code>sock</code> and <code>remote</code> are diffenrent from client's <code>sock</code> and <code>remote</code>. Actually, <code>remote</code> in <code>local.py</code> is connecting <code>sock</code> in <code>server.py</code>, and the <code>sock</code> in <code>local.py</code> connects to a browser while <code>remote</code> in <code>server.py</code> connects to destination sites (e.g. google.com). Due to Shadowsocks' elaborate design, the same class functions elegantly in different side.</p>
+
+<pre><code>Client                                  Server
++-------------------+                   +-------------------+
+|                   |                   |                   |
+|      sock         |                   |      sock         |
+|                   |        +----------&gt;                   |
+|                   |        |          |                   |
++-------------------+        |          +-------------------+
+|                   |        |          |                   |
+|     remote        |        |          |      remote       |
+|                   +--------+          |                   |
+|                   |                   |                   |
++-------------------+                   +-------------------+
+</code></pre>
       </section>
     </div>
 
