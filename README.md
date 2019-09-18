@@ -2,8 +2,6 @@
 
 Shadowsocks with comments which are helpful to understand its structure.
 
-This repository should **only** be used for learning Python.
-
 ## Project structure
 
 1. `asyncdns.py`: Handling DNS requests.
